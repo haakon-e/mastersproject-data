@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function find_all(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sort_column(elem) {
+    toggle_sort_states(elem);
+    var colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    var key;
+    if (elem.classList.contains('numeric')) {
+        key = key_num;
+    } else if (elem.classList.contains('result')) {
+        key = key_result;
+    } else {
+        key = key_alpha;
+    }
+    sort_table(elem, key(colIndex));
+}
+
+function show_all_extras() {
+    find_all('.col-result').forEach(show_extras);
+}
+
+function hide_all_extras() {
+    find_all('.col-result').forEach(hide_extras);
+}
+
+function show_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.remove("collapsed");
+    expandcollapse.classList.remove("expander");
+    expandcollapse.classList.add("collapser");
+}
+
+function hide_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.add("collapsed");
+    expandcollapse.classList.remove("collapser");
+    expandcollapse.classList.add("expander");
+}
+
+function show_filters() {
+    var filter_items = document.getElementsByClassName('filter');
+    for (var i = 0; i < filter_items.length; i++)
+        filter_items[i].hidden = false;
+}
+
+function add_collapse() {
+    // Add links for show/hide all
+    var resulttable = find('table#results-table');
+    var showhideall = document.createElement("p");
+    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
+                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    find_all('.col-result').forEach(function(elem) {
+        var collapsed = get_query_parameter('collapsed') || 'Passed';
+        var extras = elem.parentNode.nextElementSibling;
+        var expandcollapse = document.createElement("span");
+        if (extras.classList.contains("collapsed")) {
+            expandcollapse.classList.add("expander")
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add("collapsed");
+            expandcollapse.classList.add("expander");
+        } else {
+            expandcollapse.classList.add("collapser");
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener("click", function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains("collapsed")) {
+                show_extras(event.currentTarget);
+            } else {
+                hide_extras(event.currentTarget);
+            }
+        });
+    })
+}
+
+function get_query_parameter(name) {
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () {
+    reset_sort_headers();
+
+    add_collapse();
+
+    show_filters();
+
+    sort_column(find('.initial-sort'));
+
+    find_all('.sortable').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  sort_column(elem);
+                              }, false)
+    });
+
+};
+
+function sort_table(clicked, key_func) {
+    var rows = find_all('.results-table-row');
+    var reversed = !clicked.classList.contains('asc');
+    var sorted_rows = sort(rows, key_func, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    var thead = document.getElementById("results-table-head");
+    document.getElementById('results-table').remove();
+    var parent = document.createElement("table");
+    parent.id = "results-table";
+    parent.appendChild(thead);
+    sorted_rows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName("BODY")[0].appendChild(parent);
+}
+
+function sort(items, key_func, reversed) {
+    var sort_array = items.map(function(item, i) {
+        return [key_func(item), i];
+    });
+
+    sort_array.sort(function(a, b) {
+        var key_a = a[0];
+        var key_b = b[0];
+
+        if (key_a == key_b) return 0;
+
+        if (reversed) {
+            return (key_a < key_b ? 1 : -1);
+        } else {
+            return (key_a > key_b ? 1 : -1);
+        }
+    });
+
+    return sort_array.map(function(item) {
+        var index = item[1];
+        return items[index];
+    });
+}
+
+function key_alpha(col_index) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[col_index].firstChild.data.toLowerCase();
+    };
+}
+
+function key_num(col_index) {
+    return function(elem) {
+        return parseFloat(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function key_result(col_index) {
+    return function(elem) {
+        var strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+                       'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function reset_sort_headers() {
+    find_all('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    find_all('.sortable').forEach(function(elem) {
+        var icon = document.createElement("div");
+        icon.className = "sort-icon";
+        icon.textContent = "vvv";
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove("desc", "active");
+        elem.classList.add("asc", "inactive");
+    });
+}
+
+function toggle_sort_states(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        reset_sort_headers();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function is_all_rows_hidden(value) {
+  return value.hidden == false;
+}
+
+function filter_table(elem) {
+    var outcome_att = "data-test-result";
+    var outcome = elem.getAttribute(outcome_att);
+    class_outcome = outcome + " results-table-row";
+    var outcome_rows = document.getElementsByClassName(class_outcome);
+
+    for(var i = 0; i < outcome_rows.length; i++){
+        outcome_rows[i].hidden = !elem.checked;
+    }
+
+    var rows = find_all('.results-table-row').filter(is_all_rows_hidden);
+    var all_rows_hidden = rows.length == 0 ? true : false;
+    var not_found_message = document.getElementById("not-found-message");
+    not_found_message.hidden = !all_rows_hidden;
+}
+</script>
+    <h1>simulation-log.html</h1>
+    <p>Report generated on 03-Jul-2020 at 16:34:58 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v2.1.1</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "0.13.1", "py": "1.9.0", "pytest": "5.4.3"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Linux-4.19.0-9-cloud-amd64-x86_64-with-debian-10.4</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"cov": "2.10.0", "html": "2.1.1", "metadata": "1.10.0"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.7.7</td></tr></table>
+    <h2>Summary</h2>
+    <p>1 tests ran in 1027.03 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">1 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable numeric" col="duration">Duration</th>
+          <th>Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">GTS/test/test_isc_modelling/test_isc_model.py::TestISCBiotContactMechanics::test_realistic_setup</td>
+          <td class="col-duration">1025.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>[32mINFO    [0m GTS.isc_modelling.contact_mechanics_biot:logging_util.py:23 Calling prepare_simulation
+[32mINFO    [0m GTS.ISC_data.isc:isc.py:43 GTS-ISC data located at: /home/haakonervik/mastersproject/src/mastersproject/GTS/01BasicInputData.
+[32mINFO    [0m GTS.ISC_data.fracture:fracture.py:59 Interpolating shearzone S1_2 ...
+[32mINFO    [0m root:fit_plane.py:155 Sum of pointwise relative errors: 0.1129
+[32mINFO    [0m GTS.ISC_data.fracture:fracture.py:59 Interpolating shearzone S3_1 ...
+[32mINFO    [0m root:fit_plane.py:155 Sum of pointwise relative errors: 0.0375
+[32mINFO    [0m GTS.ISC_data.fracture:fracture.py:142 Saving vtk file of fracture network in 3D.
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:865 Find intersection between fratures
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:928 Found 13 intersections. Ellapsed time: 0.01063
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:992 Split intersections
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1083 Compile list of points and edges
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1140 Points and edges done. Elapsed time 0.00059
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1154 Uniquify points and edges, starting with 59 points, 46
+                    edges
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1217 Uniquify complete. 19 points, 22 edges. Ellapsed time
+                    0.00370
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1247 Remove edge intersections
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1369 Done with intersection removal. Elapsed time 0.04012
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1154 Uniquify points and edges, starting with 19 points, 24
+                    edges
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1217 Uniquify complete. 19 points, 24 edges. Ellapsed time
+                    0.00196
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1048 Finished fracture splitting after 0.04878 seconds
+[32mINFO    [0m porepy.fracs.fractures_3d:fractures_3d.py:1901 Minimal distance between points encountered is 0.46599717305184046
+[32mINFO    [0m porepy.fracs.simplex:simplex.py:259 Grid creation completed. Elapsed time 0.30739283561706543
+[32mINFO    [0m porepy.fracs.simplex:simplex.py:274 Created 1 3-d grids with 36856 cells
+[32mINFO    [0m porepy.fracs.simplex:simplex.py:274 Created 2 2-d grids with 179 cells
+[32mINFO    [0m porepy.fracs.simplex:simplex.py:274 Created 1 1-d grids with 3 cells
+[32mINFO    [0m porepy.fracs.meshing:meshing.py:56 Assemble in bucket
+[32mINFO    [0m porepy.fracs.meshing:meshing.py:59 Done. Elapsed time 0.11915707588195801
+[32mINFO    [0m porepy.fracs.meshing:meshing.py:61 Compute geometry
+[32mINFO    [0m porepy.fracs.meshing:meshing.py:65 Done. Elapsed time 0.4616665840148926
+[32mINFO    [0m porepy.fracs.meshing:meshing.py:66 Split fractures
+[32mINFO    [0m porepy.fracs.meshing:meshing.py:69 Done. Elapsed time 0.895751953125
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:57 Calling well_cells(&lt;GTS.test.test_isc_modelling.test_isc_model.NeverFailtBiotCM object at 0x7f984d8f9dd0&gt;)
+[32mINFO    [0m GTS.isc_modelling.parameter:parameter.py:451 Closest cell found has (unscaled) distance: 1.593321
+ideal (scaled) point coordinate: [[3.45007148 8.79464873 1.84420446]]
+nearest (scaled) cell center coordinate: [[3.55628839 8.84775894 1.80689367]]
+
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:66 &#x27;well_cells&#x27; returned None
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.contact_mechanics_biot:logging_util.py:23 Calling discretize
+[32mINFO    [0m GTS.isc_modelling.contact_mechanics_biot:contact_mechanics_biot.py:183 Discretize
+[32mINFO    [0m porepy.numerics.fv.biot:biot.py:545 Done with subproblem 0. Elapsed time 237.73166251182556
+[32mINFO    [0m GTS.isc_modelling.contact_mechanics_biot:logging_util.py:29 Finished &#x27;discretize&#x27; in 264.4076 secs
+[32mINFO    [0m GTS.isc_modelling.flow:logging_util.py:23 Calling initialize_linear_solver
+[32mINFO    [0m GTS.isc_modelling.flow:logging_util.py:29 Finished &#x27;initialize_linear_solver&#x27; in 0.0000 secs
+[32mINFO    [0m porepy.viz.exporter:exporter.py:793 Construct 3d grid information using numba
+[32mINFO    [0m GTS.isc_modelling.contact_mechanics_biot:logging_util.py:29 Finished &#x27;prepare_simulation&#x27; in 274.9026 secs
+[32mINFO    [0m porepy.models.run_models:run_models.py:48 
+Time step 1 at time 6.0e+01 of 1.8e+02 with time step 6.0e+01
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m porepy.numerics.nonlinear.nonlinear_solvers:nonlinear_solvers.py:44 Newton iteration number 0 of 60
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling before_newton_iteration
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;before_newton_iteration&#x27; in 17.9102 secs
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling assemble_and_solve_linear_system
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:683 Max element in A 1.33e+10
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:685 Max 1.75e+10 and min 6.80e-02 A sum.
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:692 UMFPACK Condition number estimate: 0.00e+00
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:698 Solve Ax=b using scipy
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:701 Done. Elapsed time 89.55516982078552
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:703 ||b-Ax|| = 1.6728031002011372e-15
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:708 ||b-Ax|| / ||b|| = 4.657457536370633e-14
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;assemble_and_solve_linear_system&#x27; in 105.5718 secs
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:409 Error in pressure is 1.000000e+00.
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:411 Scalar pressure did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:390 Error in matrix displacement is 1.000000e+00
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:392 Matrix displacement did not converge. 
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:448 Error in contact force is 1.000000e+00.
+
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:450 Contact force did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:453 DISABLE CONVERGENCE CHECK FOR CONTACT FORCE PENDING DEBUGGING
+[32mINFO    [0m porepy.numerics.nonlinear.nonlinear_solvers:nonlinear_solvers.py:44 Newton iteration number 1 of 60
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling before_newton_iteration
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;before_newton_iteration&#x27; in 18.0104 secs
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling assemble_and_solve_linear_system
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:683 Max element in A 1.33e+10
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:685 Max 1.75e+10 and min 6.80e-02 A sum.
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:692 UMFPACK Condition number estimate: 0.00e+00
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:698 Solve Ax=b using scipy
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:701 Done. Elapsed time 86.5929663181305
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:703 ||b-Ax|| = 1.5325547705936162e-15
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:708 ||b-Ax|| / ||b|| = 4.266974855166012e-14
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;assemble_and_solve_linear_system&#x27; in 102.5530 secs
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:405 Pressure converged relatively
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:409 Error in pressure is 2.101086e-24.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:390 Error in matrix displacement is 1.544047e-22
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:392 Matrix displacement converged. 
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:448 Error in contact force is 5.593816e-33.
+
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:450 Contact force did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:453 DISABLE CONVERGENCE CHECK FOR CONTACT FORCE PENDING DEBUGGING
+[32mINFO    [0m porepy.models.run_models:run_models.py:48 
+Time step 2 at time 1.2e+02 of 1.8e+02 with time step 6.0e+01
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m porepy.numerics.nonlinear.nonlinear_solvers:nonlinear_solvers.py:44 Newton iteration number 0 of 60
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling before_newton_iteration
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;before_newton_iteration&#x27; in 17.7694 secs
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling assemble_and_solve_linear_system
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:683 Max element in A 1.33e+10
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:685 Max 1.75e+10 and min 6.80e-02 A sum.
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:692 UMFPACK Condition number estimate: 0.00e+00
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:698 Solve Ax=b using scipy
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:701 Done. Elapsed time 89.83798003196716
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:703 ||b-Ax|| = 1.857707286758312e-15
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:708 ||b-Ax|| / ||b|| = 5.172272099473408e-14
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;assemble_and_solve_linear_system&#x27; in 106.2059 secs
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:409 Error in pressure is 1.000000e+00.
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:411 Scalar pressure did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:390 Error in matrix displacement is 1.905758e-18
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:392 Matrix displacement converged. 
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:448 Error in contact force is 1.000000e+00.
+
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:450 Contact force did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:453 DISABLE CONVERGENCE CHECK FOR CONTACT FORCE PENDING DEBUGGING
+[32mINFO    [0m porepy.numerics.nonlinear.nonlinear_solvers:nonlinear_solvers.py:44 Newton iteration number 1 of 60
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling before_newton_iteration
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;before_newton_iteration&#x27; in 17.6055 secs
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling assemble_and_solve_linear_system
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:683 Max element in A 1.33e+10
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:685 Max 1.75e+10 and min 6.80e-02 A sum.
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:692 UMFPACK Condition number estimate: 0.00e+00
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:698 Solve Ax=b using scipy
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:701 Done. Elapsed time 87.61424398422241
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:703 ||b-Ax|| = 1.529956924583432e-15
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:708 ||b-Ax|| / ||b|| = 4.2597418715129125e-14
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;assemble_and_solve_linear_system&#x27; in 103.1018 secs
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:405 Pressure converged relatively
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:409 Error in pressure is 1.061448e-19.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:390 Error in matrix displacement is 1.335556e-22
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:392 Matrix displacement converged. 
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:448 Error in contact force is 1.486081e-20.
+
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:450 Contact force did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:453 DISABLE CONVERGENCE CHECK FOR CONTACT FORCE PENDING DEBUGGING
+[32mINFO    [0m porepy.models.run_models:run_models.py:48 
+Time step 3 at time 1.8e+02 of 1.8e+02 with time step 6.0e+01
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m porepy.numerics.nonlinear.nonlinear_solvers:nonlinear_solvers.py:44 Newton iteration number 0 of 60
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling before_newton_iteration
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;before_newton_iteration&#x27; in 17.9871 secs
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling assemble_and_solve_linear_system
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:683 Max element in A 1.33e+10
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:685 Max 1.75e+10 and min 6.80e-02 A sum.
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:692 UMFPACK Condition number estimate: 0.00e+00
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:698 Solve Ax=b using scipy
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:701 Done. Elapsed time 89.7737078666687
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:703 ||b-Ax|| = 2.835647702540662e-15
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:708 ||b-Ax|| / ||b|| = 7.895076689600708e-14
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;assemble_and_solve_linear_system&#x27; in 106.0690 secs
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:409 Error in pressure is 1.000000e+00.
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:411 Scalar pressure did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:390 Error in matrix displacement is 1.918872e-18
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:392 Matrix displacement converged. 
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:448 Error in contact force is 1.000000e+00.
+
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:450 Contact force did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:453 DISABLE CONVERGENCE CHECK FOR CONTACT FORCE PENDING DEBUGGING
+[32mINFO    [0m porepy.numerics.nonlinear.nonlinear_solvers:nonlinear_solvers.py:44 Newton iteration number 1 of 60
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling before_newton_iteration
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;before_newton_iteration&#x27; in 17.6934 secs
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:23 Calling assemble_and_solve_linear_system
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:683 Max element in A 1.33e+10
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:685 Max 1.75e+10 and min 6.80e-02 A sum.
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:692 UMFPACK Condition number estimate: 0.00e+00
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:698 Solve Ax=b using scipy
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:701 Done. Elapsed time 85.19711375236511
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:703 ||b-Ax|| = 1.525045385587081e-15
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:708 ||b-Ax|| / ||b|| = 4.2460670497057396e-14
+[32mINFO    [0m GTS.isc_modelling.isc_model:logging_util.py:29 Finished &#x27;assemble_and_solve_linear_system&#x27; in 103.0586 secs
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 3 have values: min [k=1.10e-22, a=1.00e+00]; mean [k=1.10e-22, a=1.00e+00]; max [k=1.10e-22, a=1.00e+00]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 2 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:174 Scaled permeability and aperture in dim 1 have values: min [k=3.51e-12, a=6.49e-06]; mean [k=3.51e-12, a=6.49e-06]; max [k=3.51e-12, a=6.49e-06]
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:397 Pressure converged absolutely
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:409 Error in pressure is 2.801684e-09.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:390 Error in matrix displacement is 1.171660e-22
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:392 Matrix displacement converged. 
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:448 Error in contact force is 2.237383e-20.
+
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:450 Contact force did not converge.
+[32mINFO    [0m GTS.isc_modelling.mechanics:mechanics.py:453 DISABLE CONVERGENCE CHECK FOR CONTACT FORCE PENDING DEBUGGING
+[32mINFO    [0m GTS.isc_modelling.flow:flow.py:458 Solution exported to folder 
+ /home/haakonervik/mastersproject-data/results/200703/2frac/inj-p_4MPa-frac-center/dilation/uniform_k/fix_assembly
+[32mINFO    [0m GTS.isc_modelling.isc_model:isc_model.py:508 Time of simulation: Fri Jul  3 16:34:44 2020
+
+Information on negative values:
+pressure values. max: 5.38e+05. Mean: 4.99e+05. Min: 1.27e+05
+No negative pressure values. count:0
+
+Summary of relevant parameters:
+length scale: 1.28e+01
+scalar scale: 1.00e+10
+3d permeability: 1.80e-20
+time step: 0.0167 hours
+3d cells: 36856
+pp condition number: 2.57e+11
+umfpack condition number: inf
+
+Estimates on term sizes, 3d grid:
+diffusive term: 8.69e-10
+mass term: 4.00e+00
+source; max: 0.00e+00; number of non-zero sources: 0
+cell volumes. max:1.22e+00, min:2.44e-04, mean:3.49e-01<br/></div></td></tr></tbody></table></body></html>
