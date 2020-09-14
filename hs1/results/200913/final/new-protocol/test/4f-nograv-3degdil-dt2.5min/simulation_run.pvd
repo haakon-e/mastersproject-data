@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<VTKFile type="Collection" version="0.1" byte_order="LittleEndian" compressor="vtkZLibDataCompressor">
+<Collection>
+	<DataSet group="" part="" timestep="-473040000000.000000" file="simulation_run_1_-473040000000.0.vtu"/>
+	<DataSet group="" part="" timestep="-473040000000.000000" file="simulation_run_2_-473040000000.0.vtu"/>
+	<DataSet group="" part="" timestep="-473040000000.000000" file="simulation_run_3_-473040000000.0.vtu"/>
+	<DataSet group="" part="" timestep="-946080000.000000" file="simulation_run_1_-946080000.0.vtu"/>
+	<DataSet group="" part="" timestep="-946080000.000000" file="simulation_run_2_-946080000.0.vtu"/>
+	<DataSet group="" part="" timestep="-946080000.000000" file="simulation_run_3_-946080000.0.vtu"/>
+	<DataSet group="" part="" timestep="-473040000.000000" file="simulation_run_1_-473040000.0.vtu"/>
+	<DataSet group="" part="" timestep="-473040000.000000" file="simulation_run_2_-473040000.0.vtu"/>
+	<DataSet group="" part="" timestep="-473040000.000000" file="simulation_run_3_-473040000.0.vtu"/>
+	<DataSet group="" part="" timestep="0.000000" file="simulation_run_1_0000.0.vtu"/>
+	<DataSet group="" part="" timestep="0.000000" file="simulation_run_2_0000.0.vtu"/>
+	<DataSet group="" part="" timestep="0.000000" file="simulation_run_3_0000.0.vtu"/>
+	<DataSet group="" part="" timestep="300.000000" file="simulation_run_1_0300.0.vtu"/>
+	<DataSet group="" part="" timestep="300.000000" file="simulation_run_2_0300.0.vtu"/>
+	<DataSet group="" part="" timestep="300.000000" file="simulation_run_3_0300.0.vtu"/>
+	<DataSet group="" part="" timestep="450.000000" file="simulation_run_1_0450.0.vtu"/>
+	<DataSet group="" part="" timestep="450.000000" file="simulation_run_2_0450.0.vtu"/>
+	<DataSet group="" part="" timestep="450.000000" file="simulation_run_3_0450.0.vtu"/>
+	<DataSet group="" part="" timestep="600.000000" file="simulation_run_1_0600.0.vtu"/>
+	<DataSet group="" part="" timestep="600.000000" file="simulation_run_2_0600.0.vtu"/>
+	<DataSet group="" part="" timestep="600.000000" file="simulation_run_3_0600.0.vtu"/>
+</Collection>
+</VTKFile>
