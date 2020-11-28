@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="160"                  NumberOfCells="152"                 >
+      <PointData>
+      </PointData>
+      <CellData>
+        <DataArray type="Int32" Name="grid_dim" format="appended" RangeMin="1"                    RangeMax="1"                    offset="0"                   />
+        <DataArray type="Int32" Name="cell_id" format="appended" RangeMin="0"                    RangeMax="37"                   offset="48"                  />
+        <DataArray type="Int32" Name="grid_edge_number" format="appended" RangeMin="3"                    RangeMax="6"                    offset="180"                 />
+        <DataArray type="Int8" Name="is_mortar" format="appended" RangeMin="1"                    RangeMax="1"                    offset="240"                 />
+        <DataArray type="Int32" Name="mortar_side" format="appended" RangeMin="1"                    RangeMax="2"                    offset="280"                 />
+      </CellData>
+      <Points>
+        <DataArray type="Float32" Name="Points" NumberOfComponents="3" format="appended" RangeMin="101.55909552"         RangeMax="129.45729747"         offset="340"                 >
+          <InformationKey name="L2_NORM_RANGE" location="vtkDataArray" length="2">
+            <Value index="0">
+              101.55909552
+            </Value>
+            <Value index="1">
+              129.45729747
+            </Value>
+          </InformationKey>
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int64" Name="connectivity" format="appended" RangeMin=""                     RangeMax=""                     offset="1040"                />
+        <DataArray type="Int64" Name="offsets" format="appended" RangeMin=""                     RangeMax=""                     offset="1480"                />
+        <DataArray type="UInt8" Name="types" format="appended" RangeMin=""                     RangeMax=""                     offset="1884"                />
+      </Cells>
+    </Piece>
+  </UnstructuredGrid>
+  <AppendedData encoding="base64">
+   _AQAAAACAAABgAgAAEgAAAA==eJxjZGBgYBzFo5hGGAC4EACZAQAAAACAAABgAgAAUAAAAA==eJztzlcKgwAUAMFnNGqKNb33+1/RAU8hZGH+NyIiYUZKxpycgpIFS1asqahpaOno2bBlx54DR06cuXDlxp0HT168+fDlF2P/r+l/DQa0Cv0=AQAAAACAAABgAgAAGQAAAA==eJxjZmBgYB6EmGWQYtZBitkGKQYAw0YCrQ==AQAAAACAAACYAAAADAAAAA==eJxjZBycAAAuBACZAQAAAACAAABgAgAAGgAAAA==eJxjZGBgYKQSZqIippabRt01sO4CAAevAOU=AQAAAACAAACABwAA+gEAAA==eJzl0u1LEwEcB/CVZsseFDc2CYsVwVBWQfZiGLn7fYtSEASlMErCXogvbFQIYRbBUCsTakksdOuBIIReJMog09ppZu127fG6bnPstjWnJBQZgozKon/j/oQPfNS5UhS45qFSmXHrsR7y6Bd07jbhaa0OrXwKvtMG9P/UQrMgo9KpRYdLA3ZdAoNxNZqPl6C9LI78qhz9/laMucoYhu+lqed+Ed7UStBJHP04vA3150R4q8cotrAFv64KeOAZomn7Zgw7wmhjuun5oUKcGA3CajtF+owaWc4Pob6CHvVthDfJo8W9wlgOFMC8ymFZ72CM8XxkSryYaM9YinvzYN/7Hg29A57V/etRXfMOTQkbq4mqMNvyFrwmxRrX/tDDy1P/jIYptcK8rrMf6bq8+N9LeX7qiWYxucuETc/8ZBEzONlogKUmQD4hDecdLY59DdBSJImjATXq+oNUGEkgtiNHjftCVBGOw+RKU1swRDtDMVzb7qO5S2Fa9EvY0zdGG3QRsnIizPIQuccjVDcjQDJ0k3xGoLAnjOhSEzWsCeR8HYTRV06tTz7R3Uk/Bm6vMOePiDQywSN608F0zIsUfMWhqzRruXLjM30f/wDrst0zUi5R18tZXBy0sZ28RAfdM0huTbFlF6JU9WJakV6lfVaaV2mfleb9Cz8SlV4=AQAAAACAAACACQAANgEAAA==eJxdxVcjEGAAAEBKCYlKiihEQ2WENIyWkdBE00pRVkqpVEiJhgYaSH+1B9/T3ctFRKyK5DW8lqN4Ha/naN7AMRzLcbyR43kTJ3Aib+YtvDWcFN7Gybydd3AKp/JOTuN03sW7OYMzOYv3cDbn8F7eF94fPsC5fJAP8WHO43wu4EI+wkVczCV8lEv5GB/nE3wyXBYu5wqu5FN8ms/wWT7HVVzNNVzL57mOL3A9N3AjXwxfCl/mK3yVr3ETN3MLX+cbfJNv8W2+w63cxu3cwZ18N9wVvsf3uZt7+AE/5F7u434e4EF+xEP8mJ/wMD/lZzwSfh5+wS95lF/xa37DYzzOE/yWJ/kdv+cp/sDTPMMf+VP4c/gLz/JX/sbf+QfP8Twv8E/+xb/5Dy/yEi/zX17hf+H/tUVeaQ==AQAAAACAAADABAAAHQEAAA==eJwtxVFEHAAAANBKkuTkJMnJSZKTJEmSJEmSSWYmSZIkSTJJkiRJkiSZSZJJkklmkiRJkpkkSZIkSTLJJJn00Xs/LybqXazjHO8EJzrgJAed7BSnOs0hpzvsDGc6y9mOOMe5znO+C1zoIhe7xKUuc7krXOkqV7vGH1zrOn/0J392vRvc6CY3u8WtbnO7O9zpLnf7i3vc6z73e8CDHvKwRzzqMY97wpOe8rRn/NXfPOs5z3vB373oJS97xT+86jX/9C+ve8Ob3vK2d7zrPe/7wL/9x4c+8rFPfOozn/vCl77ytW986zvf+68f/Oh/fvKzX/zfr46Kfi/GsY5zvBOc6ICTHHSyU5zqNIec7rAznOksZzviHOc6z2+pOEHyAQAAAACAAACYAAAADAAAAA==eJxjZh6cAACI3AHJ
+  </AppendedData>
+</VTKFile>
